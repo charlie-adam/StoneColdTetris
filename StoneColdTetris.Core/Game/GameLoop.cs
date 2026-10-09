@@ -8,20 +8,17 @@ public class GameLoop
     private static float _gravityTick = 0.75f;
     private static int _points = 0;
     private static int _level = 0;
-    const int CellWidth = 2;
-    private static ActivePiece _activePiece;
     private static ConsoleKey? _activeKey = null;
-    private const string emptyKey = "..";
-    private const string fullKey = "XX";
+    
+    private static ActivePiece _activePiece;
     private static Board _board = new Board();
-
+    private static Renderer _renderer = new Renderer();
+    
     public static void Run()
     {
-        Console.CursorVisible = false;
+        _renderer.Init();
         Stopwatch stopwatch = Stopwatch.StartNew();
         long lastTime = stopwatch.ElapsedMilliseconds;
-        
-        Console.Title = "Tetris";
         AddNewPiece();
 
         while (_isRunning)
@@ -32,7 +29,7 @@ public class GameLoop
 
             ProcessInput();
             Update(deltaTime);
-            Render();
+            _renderer.Draw(_board, _activePiece, _points);
 
             Thread.Sleep(16); // ~60 FPS cap
         }
@@ -46,7 +43,6 @@ public class GameLoop
             _activeKey = keyInfo.Key;
             if (keyInfo.Key == ConsoleKey.Escape)
             {
-                Console.WriteLine("Escape key pressed");
                 _isRunning = false;
             }
 
@@ -163,44 +159,5 @@ public class GameLoop
         int col = _board.Width / 2 - 1;
         int row = 0;
         _activePiece = new ActivePiece(SelectRandomPiece().PieceData, new Cell(col,row));
-    }
-
-    static void Render()
-    {
-        //draws board
-        for (int h = 0; h < _board.Height; h++)
-        {
-            for (int l = 0; l < _board.Width; l++)
-            {
-                Console.SetCursorPosition(l * CellWidth, h);
-                if (_board.IsCellFilled(l,h))
-                {
-                    Console.Write(fullKey);
-                }
-                else
-                {
-                    Console.Write(emptyKey);
-                }
-            }            
-        }
-
-        foreach (Cell coord in _activePiece.Cells())
-        {
-            Console.SetCursorPosition(coord.X * CellWidth , coord.Y);
-            Console.Write(fullKey);
-        }
-        
-        //draw key
-        if (_activeKey != null)
-        {
-            Console.SetCursorPosition(60,10);
-            Console.Write(_activeKey.Value.ToString());
-        }
-
-        Console.SetCursorPosition(40,9);
-        Console.Write("Points:");
-        
-        Console.SetCursorPosition(40,10);
-        Console.Write(_points.ToString());
     }
 }
