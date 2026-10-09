@@ -1,0 +1,10 @@
+# Build output
+bin/
+obj/
+
+# Rider
+.idea/
+*.DotSettings.user
+
+# macOS
+.DS_Store
