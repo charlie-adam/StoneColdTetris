@@ -37,6 +37,7 @@ public class GameLoop
     private static float _gravityTick = 0.75f;
     private static int _points = 0;
     private static int _level = 0;
+    const int CellWidth = 2;
     private static List<GamePiece> _gamePieces = new List<GamePiece>
     {
         new GamePiece(PieceType.L, new int[,] {
@@ -82,22 +83,17 @@ public class GameLoop
         })
     };
     private static ActivePiece _activePiece;
-    private static List<int[]> _board = new List<int[]>();
-    private static int _boardWidth = 10;
-    private static int _boardHeight = 20;
     private static ConsoleKey? _activeKey = null;
     private const string emptyKey = "..";
     private const string fullKey = "XX";
-
-    private const int _cellWidth = 2;
-    
+    private static Board _board = new Board();
 
     public static void Run()
     {
         Console.CursorVisible = false;
         Stopwatch stopwatch = Stopwatch.StartNew();
         long lastTime = stopwatch.ElapsedMilliseconds;
-        InitialiseBoard();
+        
         Console.Title = "Tetris";
         AddPiece(SelectRandomPiece().PieceType);
 
@@ -170,7 +166,7 @@ public class GameLoop
             }
         }
         
-        if (willCollide(GetCoordinatesOfPieceCells(rotated)))
+        if (_board.WillCollide(GetCoordinatesOfPieceCells(rotated)))
         {
             return false;
         }
@@ -180,7 +176,7 @@ public class GameLoop
 
     static bool TryMoveDown()
     {
-        if (willCollide(getCoordinatesOfActivePieceAfterTranslation(0,1)))
+        if (_board.WillCollide(getCoordinatesOfActivePieceAfterTranslation(0,1)))
         {
             LockPiece();
             CheckRows();
@@ -193,7 +189,7 @@ public class GameLoop
 
     static bool TryMoveLeft()
     {
-        if (willCollide(getCoordinatesOfActivePieceAfterTranslation(-1,0)))
+        if (_board.WillCollide(getCoordinatesOfActivePieceAfterTranslation(-1,0)))
             return false;
         _activePiece.position.X--;
         return true;
@@ -201,7 +197,7 @@ public class GameLoop
 
     static bool TryMoveRight()
     {
-        if (willCollide(getCoordinatesOfActivePieceAfterTranslation(1,0)))
+        if (_board.WillCollide(getCoordinatesOfActivePieceAfterTranslation(1,0)))
             return false;
         _activePiece.position.X++;
         return true;
@@ -226,26 +222,7 @@ public class GameLoop
 
     static void CheckRows()
     {
-        int rowsCleared = 0;
-        for (int row = 0; row < _boardHeight; row++)
-        {
-            int total = 0;
-            for (int col = 0; col < _boardWidth; col++)
-            {
-                if (_board[row][col] == 1)
-                {
-                    total++;
-                }
-            }
-            if (total == _boardWidth)
-            {
-                rowsCleared++;
-                //shift rows down
-                _board.RemoveAt(row);
-                _board.Insert(0,FreshRow());
-            }
-        }
-
+        int rowsCleared = _board.ClearRows();
         switch (rowsCleared)
         {
             case 1 :
@@ -270,13 +247,7 @@ public class GameLoop
     {
         //piece has hit bottom of possible fall, lock where they are
         List<Cell> activePieceCells = GetCoordinatesOfPieceCells(_activePiece.PieceData);
-        foreach (Cell coord in activePieceCells)
-        {
-            //walk the board
-            // Console.SetCursorPosition(coord[0] * _cellWidth , coord[1]);
-            // Console.Write(fullKey);
-            _board[coord.Y][coord.X] = 1;
-        }
+        _board.FillCells(activePieceCells);
     }
 
     static List<Cell> GetCoordinatesOfPieceCells(int[,] pieceData)
@@ -309,32 +280,10 @@ public class GameLoop
 
         return pieceCellCoordinatesAfterTranslation;
     }
-    
-    static bool willCollide(List<Cell> pieceCells)
-    {
-        foreach (Cell coord in pieceCells)
-        {   
-            if (
-                (coord.X >= _boardWidth) ||
-                (coord.X < 0) || 
-                (coord.Y >= _boardHeight))
-            {
-                return true;
-            }
-            
-            //also check if coord is going to collide with any filled parts of the board
-            if (_board[coord.Y][coord.X] == 1)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     static void AddPiece(PieceType pieceType)
     {
-        int col = _boardWidth / 2 - 1;
+        int col = _board.Width / 2 - 1;
         int row = 0;
         GamePiece g = _gamePieces.Find(x => x.PieceType == pieceType);
         ActivePiece newActivePiece = new ActivePiece();
@@ -347,12 +296,12 @@ public class GameLoop
     static void Render()
     {
         //draws board
-        for (int h = 0; h < _boardHeight; h++)
+        for (int h = 0; h < _board.Height; h++)
         {
-            for (int l = 0; l < _boardWidth; l++)
+            for (int l = 0; l < _board.Width; l++)
             {
-                Console.SetCursorPosition(l * _cellWidth, h);
-                if (_board[h][l] == 0)
+                Console.SetCursorPosition(l * CellWidth, h);
+                if (_board.IsCellFilled(h,l))
                 {
                     Console.Write(emptyKey);
                 }
@@ -365,7 +314,7 @@ public class GameLoop
         List<Cell> activePieceCells = GetCoordinatesOfPieceCells(_activePiece.PieceData);
         foreach (Cell coord in activePieceCells)
         {
-            Console.SetCursorPosition(coord.X * _cellWidth , coord.Y);
+            Console.SetCursorPosition(coord.X * CellWidth , coord.Y);
             Console.Write(fullKey);
         }
         
@@ -381,24 +330,5 @@ public class GameLoop
         
         Console.SetCursorPosition(40,10);
         Console.Write(_points.ToString());
-    }
-
-    static int[] FreshRow()
-    {
-        int[] row = new int[_boardWidth];
-        for (int fillW = 0; fillW < _boardWidth; fillW++)
-        {
-            row[fillW] = 0;
-        }
-
-        return row;
-    }
-
-    static void InitialiseBoard()
-    {
-        for (int fillH = 0; fillH < _boardHeight; fillH++)
-        {
-            _board.Add(FreshRow());
-        }
     }
 }
