@@ -195,7 +195,7 @@ public class GameLoop
     {
         if (willCollide(getCoordinatesOfActivePieceAfterTranslation(-1,0)))
             return false;
-        _activePiece.position.Y--;
+        _activePiece.position.X--;
         return true;
     }
 
@@ -203,7 +203,7 @@ public class GameLoop
     {
         if (willCollide(getCoordinatesOfActivePieceAfterTranslation(1,0)))
             return false;
-        _activePiece.position.Y++;
+        _activePiece.position.X++;
         return true;
     }
     
@@ -269,19 +269,19 @@ public class GameLoop
     static void LockPiece()
     {
         //piece has hit bottom of possible fall, lock where they are
-        List<int[]> activePieceCells = GetCoordinatesOfPieceCells(_activePiece.PieceData);
-        foreach (int[] coord in activePieceCells)
+        List<Cell> activePieceCells = GetCoordinatesOfPieceCells(_activePiece.PieceData);
+        foreach (Cell coord in activePieceCells)
         {
             //walk the board
             // Console.SetCursorPosition(coord[0] * _cellWidth , coord[1]);
             // Console.Write(fullKey);
-            _board[coord[1]][coord[0]] = 1;
+            _board[coord.Y][coord.X] = 1;
         }
     }
 
-    static List<int[]> GetCoordinatesOfPieceCells(int[,] pieceData)
+    static List<Cell> GetCoordinatesOfPieceCells(int[,] pieceData)
     {
-        List<int[]> coordinatesOfActivePieceCells = new List<int[]>();
+        List<Cell> coordinatesOfActivePieceCells = new List<Cell>();
 
         for (int row = 0; row < pieceData.GetLength(0);  row++)
         {
@@ -289,41 +289,41 @@ public class GameLoop
             {
                 if (pieceData[row, column] == 1)
                 {
-                    coordinatesOfActivePieceCells.Add(new[]{_activePiece.position.Y + column, _activePiece.position.Y + row});
+                    coordinatesOfActivePieceCells.Add(new Cell(_activePiece.position.X + column, _activePiece.position.Y + row));
                 }
             }
         }
         return coordinatesOfActivePieceCells;
     }
 
-    static List<int[]> getCoordinatesOfActivePieceAfterTranslation(int moveX = 0, int moveY = 0)
+    static List<Cell> getCoordinatesOfActivePieceAfterTranslation(int moveX = 0, int moveY = 0)
     {
-        List<int[]> activePieceCellCoordinates = GetCoordinatesOfPieceCells(_activePiece.PieceData);
-        List<int[]> pieceCellCoordinatesAfterTranslation = new List<int[]>();
-        foreach (int[] coord in activePieceCellCoordinates)
+        List<Cell> activePieceCellCoordinates = GetCoordinatesOfPieceCells(_activePiece.PieceData);
+        List<Cell> pieceCellCoordinatesAfterTranslation = new List<Cell>();
+        foreach (Cell coord in activePieceCellCoordinates)
         {
-            int xCoordWithOffset = coord[0] + moveX;
-            int yCoordWithOffset = coord[1] + moveY;
-            pieceCellCoordinatesAfterTranslation.Add([xCoordWithOffset, yCoordWithOffset]);
+            int xCoordWithOffset = coord.X + moveX;
+            int yCoordWithOffset = coord.Y + moveY;
+            pieceCellCoordinatesAfterTranslation.Add(new Cell(xCoordWithOffset, yCoordWithOffset));
         }
 
         return pieceCellCoordinatesAfterTranslation;
     }
     
-    static bool willCollide(List<int[]> pieceCells)
+    static bool willCollide(List<Cell> pieceCells)
     {
-        foreach (int[] coord in pieceCells)
+        foreach (Cell coord in pieceCells)
         {   
             if (
-                (coord[0] >= _boardWidth) ||
-                (coord[0] < 0) || 
-                (coord[1] >= _boardHeight))
+                (coord.X >= _boardWidth) ||
+                (coord.X < 0) || 
+                (coord.Y >= _boardHeight))
             {
                 return true;
             }
             
             //also check if coord is going to collide with any filled parts of the board
-            if (_board[coord[1]][coord[0]] == 1)
+            if (_board[coord.Y][coord.X] == 1)
             {
                 return true;
             }
@@ -339,7 +339,7 @@ public class GameLoop
         GamePiece g = _gamePieces.Find(x => x.PieceType == pieceType);
         ActivePiece newActivePiece = new ActivePiece();
         newActivePiece.PieceData = g.PieceData;
-        newActivePiece.position.Y = col;
+        newActivePiece.position.X = col;
         newActivePiece.position.Y = row;
         _activePiece = newActivePiece;
     }
@@ -362,10 +362,10 @@ public class GameLoop
                 }
             }            
         }
-        List<int[]> activePieceCells = GetCoordinatesOfPieceCells(_activePiece.PieceData);
-        foreach (int[] coord in activePieceCells)
+        List<Cell> activePieceCells = GetCoordinatesOfPieceCells(_activePiece.PieceData);
+        foreach (Cell coord in activePieceCells)
         {
-            Console.SetCursorPosition(coord[0] * _cellWidth , coord[1]);
+            Console.SetCursorPosition(coord.X * _cellWidth , coord.Y);
             Console.Write(fullKey);
         }
         
