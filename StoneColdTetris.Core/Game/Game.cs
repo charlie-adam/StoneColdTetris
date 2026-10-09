@@ -48,16 +48,32 @@ public class Game
         }
     }
 
+    public void HardDrop()
+    {
+        var rowsDropped = 0;
+        while (TryApply(ActivePiece.Moved(0, 1)))
+        {
+            rowsDropped++;
+        }
+        Points += rowsDropped * 2;
+        EndTurn();        
+    }
+
     private bool MoveDown()
     {
         if (TryApply(ActivePiece.Moved(0, 1)))
             return true;
 
         //failed to move down further, must have collided!!
+        EndTurn();
+        return false;
+    }
+
+    private void EndTurn()
+    {
         LockPiece();
         ScoreRows(Board.ClearRows());
         ActivePiece = NewPiece();
-        return false;
     }
 
     private bool TryApply(ActivePiece candidate)

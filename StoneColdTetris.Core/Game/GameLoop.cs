@@ -45,6 +45,9 @@ public class GameLoop
             case ConsoleKey.UpArrow:
                 game.Rotate();
                 break;
+            case ConsoleKey.Spacebar:
+                game.HardDrop();
+                break;
             case ConsoleKey.DownArrow:
                 game.SoftDrop();
                 break;
