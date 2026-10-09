@@ -2,16 +2,16 @@ namespace StoneColdTetris.Core.Game;
 
 public class Board
 {
-    private List<int[]> _grid = new List<int[]>();
+    private List<PieceType?[]> _grid = new List<PieceType?[]>();
     public int Width = 10;
     public int Height = 20;
     
-    private int[] FreshRow()
+    private PieceType?[] FreshRow()
     {
-        int[] row = new int[Width];
+        PieceType?[] row = new PieceType?[Width];
         for (int fillW = 0; fillW < Width; fillW++)
         {
-            row[fillW] = 0;
+            row[fillW] = null;
         }
         return row;
     }
@@ -26,7 +26,12 @@ public class Board
 
     public bool IsCellFilled(int x, int y)
     {
-        return _grid[y][x] == 1;
+        return _grid[y][x] != null;
+    }
+
+    public PieceType GetCellPieceType(int x, int y)
+    {
+        return _grid[y][x].Value;
     }
     
     public bool WillCollide(List<Cell> pieceCells)
@@ -42,7 +47,7 @@ public class Board
             }
             
             //also check if coord is going to collide with any filled parts of the board
-            if (_grid[coord.Y][coord.X] == 1)
+            if (_grid[coord.Y][coord.X] != null)
             {
                 return true;
             }
@@ -51,11 +56,11 @@ public class Board
         return false;
     }
 
-    public void FillCells(List<Cell> pieceCells)
+    public void FillCells(List<Cell> pieceCells, PieceType pieceType)
     {
         foreach (Cell coord in pieceCells)
         {
-            _grid[coord.Y][coord.X] = 1;
+            _grid[coord.Y][coord.X] = pieceType;
         }
     }
 
@@ -67,7 +72,7 @@ public class Board
             int total = 0;
             for (int col = 0; col < Width; col++)
             {
-                if (_grid[row][col] == 1)
+                if (_grid[row][col] != null)
                 {
                     total++;
                 }

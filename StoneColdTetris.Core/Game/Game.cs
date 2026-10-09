@@ -71,7 +71,7 @@ public class Game
     private void LockPiece()
     {
         //piece has hit bottom of possible fall, lock where they are
-        Board.FillCells(ActivePiece.Cells());
+        Board.FillCells(ActivePiece.Cells(), ActivePiece.PieceType);
     }
 
     private void ScoreRows(int rowsCleared)
@@ -99,7 +99,8 @@ public class Game
     {
         int col = Board.Width / 2 - 1;
         int row = 0;
-        return new ActivePiece(SelectRandomPiece().PieceData, new Cell(col, row));
+        GamePiece randomPiece = SelectRandomPiece();
+        return new ActivePiece(randomPiece.PieceData, new Cell(col, row), randomPiece.PieceType);
     }
 
     private GamePiece SelectRandomPiece()

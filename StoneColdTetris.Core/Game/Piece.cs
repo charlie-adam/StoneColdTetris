@@ -60,10 +60,12 @@ public class ActivePiece
 {
     private readonly int[,] _pieceData;
     private readonly Cell _position;
-    public ActivePiece(int[,] pieceData, Cell position)
+    public readonly PieceType PieceType;
+    public ActivePiece(int[,] pieceData, Cell position, PieceType pieceType)
     {
         _pieceData = pieceData;
         _position = position;
+        PieceType = pieceType;
     }
 
     public List<Cell> Cells()
@@ -85,7 +87,7 @@ public class ActivePiece
     
     public ActivePiece Moved(int dx, int dy)
     {
-        return new ActivePiece(_pieceData, new Cell(_position.X + dx, _position.Y + dy));
+        return new ActivePiece(_pieceData, new Cell(_position.X + dx, _position.Y + dy), PieceType);
     }
     
     public ActivePiece Rotated()
@@ -112,7 +114,7 @@ public class ActivePiece
             }
         }
 
-        return new ActivePiece(rotated, _position);
+        return new ActivePiece(rotated, _position, PieceType);
     }
 }
 
