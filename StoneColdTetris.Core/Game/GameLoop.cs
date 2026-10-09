@@ -1,34 +1,5 @@
 using System.Diagnostics;
 namespace StoneColdTetris.Core.Game;
-public class GamePiece
-{
-    public PieceType PieceType;
-    public int[,] PieceData;
-    
-    public GamePiece(PieceType type, int[,] data)
-    {
-        PieceType = type;
-        PieceData = data;
-    }
-}
-public record struct Cell(int X, int Y);
-
-public class ActivePiece
-{
-    public int[,] PieceData;
-    public Cell position;
-}
-
-public enum PieceType
-{
-    L,
-    S,
-    T,
-    Z,
-    J,
-    I,
-    O
-}
 
 public class GameLoop
 {
@@ -38,50 +9,6 @@ public class GameLoop
     private static int _points = 0;
     private static int _level = 0;
     const int CellWidth = 2;
-    private static List<GamePiece> _gamePieces = new List<GamePiece>
-    {
-        new GamePiece(PieceType.L, new int[,] {
-            { 0, 1, 0 },
-            { 0, 1, 0 },
-            { 0, 1, 1 }
-        }),
-    
-        new GamePiece(PieceType.S, new int[,] {
-            { 0, 0, 0 },
-            { 0, 1, 1 },
-            { 1, 1, 0 }
-        }),
-    
-        new GamePiece(PieceType.T, new int[,] {
-            { 0, 0, 0 },
-            { 1, 1, 1 },
-            { 0, 1, 0 }
-        }),
-    
-        new GamePiece(PieceType.Z, new int[,] {
-            { 0, 0, 0 },
-            { 1, 1, 0 },
-            { 0, 1, 1 }
-        }),
-    
-        new GamePiece(PieceType.J, new int[,] {
-            { 0, 1, 0 },
-            { 0, 1, 0 },
-            { 1, 1, 0 }
-        }),
-    
-        new GamePiece(PieceType.I, new int[,] {
-            { 0, 1, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 1, 0, 0 },
-            { 0, 1, 0, 0 }
-        }),
-    
-        new GamePiece(PieceType.O, new int[,] {
-            { 1, 1 },
-            { 1, 1 }
-        })
-    };
     private static ActivePiece _activePiece;
     private static ConsoleKey? _activeKey = null;
     private const string emptyKey = "..";
@@ -95,7 +22,7 @@ public class GameLoop
         long lastTime = stopwatch.ElapsedMilliseconds;
         
         Console.Title = "Tetris";
-        AddPiece(SelectRandomPiece().PieceType);
+        AddNewPiece();
 
         while (_isRunning)
         {
@@ -144,69 +71,50 @@ public class GameLoop
 
     static bool TryRotate()
     {
-        //rotate clockwise, matricies transform & reverse.
-        int pieceLength = _activePiece.PieceData.GetLength(0);
-        int pieceWidth = _activePiece.PieceData.GetLength(1);
-        int[,] transposed = new int[pieceLength, pieceWidth];
-        for (int r = 0; r < pieceLength; r++)
-        {
-            for (int c = 0; c < pieceLength; c++)
-            {
-                transposed[c, r] = _activePiece.PieceData[r, c];
-            }
-        }
-        
-        //reverse
-        int[,] rotated = new int[pieceLength, pieceWidth];
-        for (int r = 0; r < pieceLength; r++)
-        {
-            for (int c = 0; c < pieceLength; c++)
-            {
-                rotated[r, c] = transposed[r, pieceLength-1 - c];
-            }
-        }
-        
-        if (_board.WillCollide(GetCoordinatesOfPieceCells(rotated)))
-        {
+        ActivePiece candidate = _activePiece.Rotated();
+        if (_board.WillCollide(candidate.Cells()))
             return false;
-        }
-        _activePiece.PieceData = rotated;
+        _activePiece = candidate;
         return true;
     }
 
     static bool TryMoveDown()
     {
-        if (_board.WillCollide(getCoordinatesOfActivePieceAfterTranslation(0,1)))
+        ActivePiece candidate = _activePiece.Moved(0,1);
+        if (_board.WillCollide(candidate.Cells()))
         {
             LockPiece();
             CheckRows();
-            AddPiece(SelectRandomPiece().PieceType);
+            AddNewPiece();
             return false;
         }
-        _activePiece.position.Y++;
+
+        _activePiece = candidate;
         return true;
     }
 
     static bool TryMoveLeft()
     {
-        if (_board.WillCollide(getCoordinatesOfActivePieceAfterTranslation(-1,0)))
+        ActivePiece candidate = _activePiece.Moved(-1,0);
+        if (_board.WillCollide(candidate.Cells()))
             return false;
-        _activePiece.position.X--;
+        _activePiece = candidate;
         return true;
     }
 
     static bool TryMoveRight()
     {
-        if (_board.WillCollide(getCoordinatesOfActivePieceAfterTranslation(1,0)))
+        ActivePiece candidate = _activePiece.Moved(1,0);
+        if (_board.WillCollide(candidate.Cells()))
             return false;
-        _activePiece.position.X++;
+        _activePiece = candidate;
         return true;
     }
     
     static GamePiece SelectRandomPiece()
     {
         int randomValue = Random.Shared.Next(0, 7);
-        return _gamePieces[randomValue];
+        return GamePiece.All[randomValue];
     }
     
 
@@ -246,51 +154,15 @@ public class GameLoop
     static void LockPiece()
     {
         //piece has hit bottom of possible fall, lock where they are
-        List<Cell> activePieceCells = GetCoordinatesOfPieceCells(_activePiece.PieceData);
+        List<Cell> activePieceCells = _activePiece.Cells();
         _board.FillCells(activePieceCells);
     }
 
-    static List<Cell> GetCoordinatesOfPieceCells(int[,] pieceData)
-    {
-        List<Cell> coordinatesOfActivePieceCells = new List<Cell>();
-
-        for (int row = 0; row < pieceData.GetLength(0);  row++)
-        {
-            for (int column = 0; column < pieceData.GetLength(1); column++)
-            {
-                if (pieceData[row, column] == 1)
-                {
-                    coordinatesOfActivePieceCells.Add(new Cell(_activePiece.position.X + column, _activePiece.position.Y + row));
-                }
-            }
-        }
-        return coordinatesOfActivePieceCells;
-    }
-
-    static List<Cell> getCoordinatesOfActivePieceAfterTranslation(int moveX = 0, int moveY = 0)
-    {
-        List<Cell> activePieceCellCoordinates = GetCoordinatesOfPieceCells(_activePiece.PieceData);
-        List<Cell> pieceCellCoordinatesAfterTranslation = new List<Cell>();
-        foreach (Cell coord in activePieceCellCoordinates)
-        {
-            int xCoordWithOffset = coord.X + moveX;
-            int yCoordWithOffset = coord.Y + moveY;
-            pieceCellCoordinatesAfterTranslation.Add(new Cell(xCoordWithOffset, yCoordWithOffset));
-        }
-
-        return pieceCellCoordinatesAfterTranslation;
-    }
-
-    static void AddPiece(PieceType pieceType)
+    static void AddNewPiece()
     {
         int col = _board.Width / 2 - 1;
         int row = 0;
-        GamePiece g = _gamePieces.Find(x => x.PieceType == pieceType);
-        ActivePiece newActivePiece = new ActivePiece();
-        newActivePiece.PieceData = g.PieceData;
-        newActivePiece.position.X = col;
-        newActivePiece.position.Y = row;
-        _activePiece = newActivePiece;
+        _activePiece = new ActivePiece(SelectRandomPiece().PieceData, new Cell(col,row));
     }
 
     static void Render()
@@ -301,18 +173,18 @@ public class GameLoop
             for (int l = 0; l < _board.Width; l++)
             {
                 Console.SetCursorPosition(l * CellWidth, h);
-                if (_board.IsCellFilled(h,l))
-                {
-                    Console.Write(emptyKey);
-                }
-                else
+                if (_board.IsCellFilled(l,h))
                 {
                     Console.Write(fullKey);
                 }
+                else
+                {
+                    Console.Write(emptyKey);
+                }
             }            
         }
-        List<Cell> activePieceCells = GetCoordinatesOfPieceCells(_activePiece.PieceData);
-        foreach (Cell coord in activePieceCells)
+
+        foreach (Cell coord in _activePiece.Cells())
         {
             Console.SetCursorPosition(coord.X * CellWidth , coord.Y);
             Console.Write(fullKey);

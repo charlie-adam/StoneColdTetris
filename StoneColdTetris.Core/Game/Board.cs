@@ -24,9 +24,9 @@ public class Board
         }
     }
 
-    public bool IsCellFilled(int row, int column)
+    public bool IsCellFilled(int x, int y)
     {
-        return _grid[row][column] == 0;
+        return _grid[y][x] == 1;
     }
     
     public bool WillCollide(List<Cell> pieceCells)
