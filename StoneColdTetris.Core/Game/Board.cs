@@ -18,6 +18,12 @@ public class Board
 
     public Board()
     {
+        Reset();
+    }
+
+    public void Reset()
+    {
+        _grid.Clear();
         for (int fillH = 0; fillH < Height; fillH++)
         {
             _grid.Add(FreshRow());

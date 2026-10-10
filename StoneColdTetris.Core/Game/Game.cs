@@ -74,6 +74,11 @@ public class Game
         LockPiece();
         ScoreRows(Board.ClearRows());
         ActivePiece = NewPiece();
+        if (!TryApply(ActivePiece))
+        {
+            GameOver();
+        }
+        
     }
 
     private bool TryApply(ActivePiece candidate)
@@ -82,6 +87,14 @@ public class Game
             return false;
         ActivePiece = candidate;
         return true;
+    }
+
+    private void GameOver()
+    {
+        Points = 0;
+        Board.Reset();
+        _gravityTimer = 0;
+        ActivePiece = NewPiece();
     }
 
     private void LockPiece()

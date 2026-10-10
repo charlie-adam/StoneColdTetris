@@ -59,6 +59,6 @@ public class Renderer
         Console.Write("Points:");
         
         Console.SetCursorPosition(40,10);
-        Console.Write(points.ToString());
+        Console.Write(points.ToString().PadRight(10));
     }
 }
