@@ -3,13 +3,13 @@ namespace StoneColdTetris.Core.Game;
 public class Board
 {
     private List<PieceType?[]> _grid = new List<PieceType?[]>();
-    public int Width = 10;
-    public int Height = 20;
+    public readonly int Width = 10;
+    public readonly int Height = 20;
     
     private PieceType?[] FreshRow()
     {
         PieceType?[] row = new PieceType?[Width];
-        for (int fillW = 0; fillW < Width; fillW++)
+        for (var fillW = 0; fillW < Width; fillW++)
         {
             row[fillW] = null;
         }

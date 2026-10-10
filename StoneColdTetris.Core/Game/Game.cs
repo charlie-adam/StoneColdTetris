@@ -9,9 +9,13 @@ public class Game
 
     private float _gravityTimer;
     private float _gravityTick = 0.75f;
+    private List<GamePiece> _activeBag = new List<GamePiece>();
+    private List<GamePiece> _nextBag = new List<GamePiece>();
 
     public Game()
     {
+        _activeBag = NewBag();
+        _nextBag = NewBag();
         ActivePiece = NewPiece();
     }
 
@@ -124,17 +128,44 @@ public class Game
         }
     }
 
+    public GamePiece NextPiece()
+    {
+        return _activeBag[^1];
+    }
+
+    private List<GamePiece> NewBag()
+    {
+        GamePiece[] bag = GamePiece.All.ToArray();
+        Random.Shared.Shuffle(bag);
+        return new List<GamePiece>(bag);
+    }
+
+    private void UpdateBags()
+    {
+        if (_nextBag.Count == 0)
+            _nextBag = NewBag();
+        if (_activeBag.Count == 0)
+        {
+            _activeBag = _nextBag;
+            _nextBag = NewBag();
+        }
+    }
+
     private ActivePiece NewPiece()
     {
+        //Location top of board in middle
         int col = Board.Width / 2 - 1;
         int row = 0;
+
         GamePiece randomPiece = SelectRandomPiece();
         return new ActivePiece(randomPiece.PieceData, new Cell(col, row), randomPiece.PieceType);
     }
 
     private GamePiece SelectRandomPiece()
     {
-        int randomValue = Random.Shared.Next(GamePiece.All.Count);
-        return GamePiece.All[randomValue];
+        GamePiece piece = _activeBag[^1];
+        _activeBag.RemoveAt(_activeBag.Count - 1);
+        UpdateBags();
+        return piece;
     }
 }

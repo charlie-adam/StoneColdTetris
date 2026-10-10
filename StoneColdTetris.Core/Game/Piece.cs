@@ -9,6 +9,7 @@ public class GamePiece
         PieceType = type;
         PieceData = data;
     }
+    
     public static readonly IReadOnlyList<GamePiece> All = new List<GamePiece>()
     {
         new GamePiece(PieceType.L, new int[,] {

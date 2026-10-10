@@ -26,7 +26,7 @@ public class Renderer
         Console.ForegroundColor = DefaultColor;
     }
     
-    public void Draw(Board board, ActivePiece activePiece, int points)    
+    public void Draw(Board board, ActivePiece activePiece, int points, GamePiece nextPiece)    
     {
         //draws board
         for (int y = 0; y < board.Height; y++)
@@ -46,19 +46,43 @@ public class Renderer
                 }
             }            
         }
-
-        foreach (Cell coord in activePiece.Cells())
-        {
-            Console.SetCursorPosition(coord.X * CellWidth , coord.Y);
-            Console.ForegroundColor = ColourMap[activePiece.PieceType];
-            Console.Write(FullCell);
-            Console.ForegroundColor = DefaultColor;
-        }
+        
+        DrawPiece(activePiece.Cells(), activePiece.PieceType);
+        
+        //DRAW POINTS
         
         Console.SetCursorPosition(40,9);
         Console.Write("Points:");
         
         Console.SetCursorPosition(40,10);
         Console.Write(points.ToString().PadRight(10));
+        
+        //DRAW NEXT PIECE
+        ActivePiece tempNextPiece = new ActivePiece(nextPiece.PieceData, new Cell(20, 12), nextPiece.PieceType);
+        ClearArea(20*CellWidth,12,4*CellWidth,4);
+        DrawPiece(tempNextPiece.Cells(), nextPiece.PieceType);
+    }
+
+    private void ClearArea(int x, int y, int width, int height)
+    {
+        for (int w = 0; w < width; w++)
+        {
+            for (int h = 0; h < height; h++)
+            {
+                Console.SetCursorPosition(x + w, y + h);
+                Console.Write(".");
+            }
+        }
+    }
+
+    private void DrawPiece(List<Cell> pieceCells, PieceType type)
+    {
+        foreach (Cell coord in pieceCells)
+        {
+            Console.SetCursorPosition(coord.X * CellWidth , coord.Y);
+            Console.ForegroundColor = ColourMap[type];
+            Console.Write(FullCell);
+            Console.ForegroundColor = DefaultColor;
+        }
     }
 }
