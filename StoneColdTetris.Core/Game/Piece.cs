@@ -60,12 +60,12 @@ public record struct Cell(int X, int Y);
 public class ActivePiece
 {
     private readonly int[,] _pieceData;
-    private readonly Cell _position;
+    private readonly Cell Position;
     public readonly PieceType PieceType;
     public ActivePiece(int[,] pieceData, Cell position, PieceType pieceType)
     {
         _pieceData = pieceData;
-        _position = position;
+        Position = position;
         PieceType = pieceType;
     }
 
@@ -79,7 +79,7 @@ public class ActivePiece
             {
                 if (_pieceData[row, column] == 1)
                 {
-                    coordinatesOfActivePieceCells.Add(new Cell(_position.X + column, _position.Y + row));
+                    coordinatesOfActivePieceCells.Add(new Cell(Position.X + column, Position.Y + row));
                 }
             }
         }
@@ -88,7 +88,7 @@ public class ActivePiece
     
     public ActivePiece Moved(int dx, int dy)
     {
-        return new ActivePiece(_pieceData, new Cell(_position.X + dx, _position.Y + dy), PieceType);
+        return new ActivePiece(_pieceData, new Cell(Position.X + dx, Position.Y + dy), PieceType);
     }
     
     public ActivePiece Rotated()
@@ -115,7 +115,7 @@ public class ActivePiece
             }
         }
 
-        return new ActivePiece(rotated, _position, PieceType);
+        return new ActivePiece(rotated, Position, PieceType);
     }
 }
 

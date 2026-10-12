@@ -6,6 +6,7 @@ public class Board
     public readonly int Width = 10;
     public readonly int Height = 20;
     
+    
     private PieceType?[] FreshRow()
     {
         PieceType?[] row = new PieceType?[Width];
@@ -70,28 +71,34 @@ public class Board
         }
     }
 
-    public int ClearRows()
+    public List<int> FindFullRows()
     {
-        int rowsCleared = 0;
+        List<int> rowsFull = [];
         for (int row = 0; row < Height; row++)
         {
-            int total = 0;
+            int totalCellsInRow = 0;
             for (int col = 0; col < Width; col++)
             {
                 if (_grid[row][col] != null)
                 {
-                    total++;
+                    totalCellsInRow++;
                 }
             }
-            if (total == Width)
+            if (totalCellsInRow == Width)
             {
-                rowsCleared++;
-                //shift rows down
-                _grid.RemoveAt(row);
-                _grid.Insert(0,FreshRow());
+                rowsFull.Add(row);
             }
         }
 
-        return rowsCleared;
+        return rowsFull;
+    }
+
+    public int ClearRows(List<int> rowIndexes)
+    {
+        for (int i = 0; i < rowIndexes.Count; i++ ){
+            _grid.RemoveAt(rowIndexes[i]);
+            _grid.Insert(0,FreshRow());
+        }
+        return rowIndexes.Count;
     }
 }

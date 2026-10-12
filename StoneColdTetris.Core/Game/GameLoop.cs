@@ -20,7 +20,8 @@ public class GameLoop
 
             isRunning = ProcessInput(game);
             game.Update(deltaTime);
-            renderer.Draw(game.Board, game.ActivePiece, game.Points, game.NextPiece());
+            renderer.Draw(game.Board, game.ActivePiece, game.Points, game.NextPiece(),
+                game.DropPreviewPiece(), game.StoredPiece, game.ClearingRows(), game.FlashOn());
 
             Thread.Sleep(16); // ~60 FPS cap
         }
@@ -50,6 +51,9 @@ public class GameLoop
                 break;
             case ConsoleKey.DownArrow:
                 game.SoftDrop();
+                break;
+            case ConsoleKey.C:
+                game.Store();
                 break;
         }
         return true;
