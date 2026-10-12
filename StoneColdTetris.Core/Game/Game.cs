@@ -5,15 +5,16 @@ public class Game
     public Board Board { get; } = new Board();
     public ActivePiece ActivePiece { get; private set; }
     public int Points { get; private set; }
-    public int Level { get; private set; }
+    public int LinesCleared { get; private set; }
+    public int Level => 1 + LinesCleared / 10;
     public GamePiece? StoredPiece { get; private set; }
     
     private bool IsClearing => _clearingRows.Count > 0;
 
     private float _gravityTimer;
-    private float _gravityTick = 0.75f;
+    private float GravityTick => MathF.Pow(0.8f - (Level - 1) * 0.007f, Level - 1);
     private float _flashTimer;
-    private float _flashDuration = 1f;
+    private float _flashDuration = 0.5f;
     private List<int> _clearingRows = new List<int>();
     private List<GamePiece> _activeBag = new List<GamePiece>();
     private List<GamePiece> _nextBag = new List<GamePiece>();
@@ -35,6 +36,7 @@ public class Game
             {
                 _flashTimer = 0;
                 ScoreRows(_clearingRows.Count);
+                LinesCleared += _clearingRows.Count;
                 Board.ClearRows(_clearingRows);
                 _clearingRows = new List<int>();
                 FinishTurn();
@@ -42,10 +44,15 @@ public class Game
             return;
         }
         _gravityTimer += deltaTime;
-        if (_gravityTimer > _gravityTick)
+        while (_gravityTimer > GravityTick)
         {
-            _gravityTimer -= _gravityTick;
-            MoveDown();
+            _gravityTimer -= GravityTick;
+            if (!MoveDown())
+            {
+                // the piece locked, DONT spend the leftover time on the next piece
+                _gravityTimer = 0;
+                break;
+            }
         }
     }
 
@@ -145,6 +152,7 @@ public class Game
         Points = 0;
         Board.Reset();
         _gravityTimer = 0;
+        LinesCleared = 0;
         ActivePiece = NewPiece();
     }
 
@@ -159,16 +167,16 @@ public class Game
         switch (rowsCleared)
         {
             case 1 :
-                Points += 40 * (Level + 1);
+                Points += 100 * Level;
                 break;
             case 2 :
-                Points += 100 * (Level + 1);
+                Points += 300 * Level;
                 break;
             case 3:
-                Points += 300 * (Level + 1);
+                Points += 500 * Level;
                 break;
             case 4:
-                Points += 1200 * (Level + 1);
+                Points += 800 * Level;
                 break;
             default:
                 break;

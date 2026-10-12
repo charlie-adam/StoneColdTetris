@@ -111,7 +111,8 @@ public class Renderer
     }
 
     public void Draw(Board board, ActivePiece activePiece, int points, GamePiece nextPiece, 
-        ActivePiece dropPreviewPiece, GamePiece? storedPiece, List<int> clearingRows, bool flashOn)    
+        ActivePiece dropPreviewPiece, GamePiece? storedPiece, List<int> clearingRows, 
+        bool flashOn, int level)    
     {
         DrawBoard(board);
 
@@ -120,6 +121,8 @@ public class Renderer
         DrawPreview("Stored Piece:", storedPiece, panelLeft, 1);
         DrawText("Points:", panelLeft, 12);
         DrawText(points.ToString(), panelLeft, 13);
+        DrawText("Level:", panelLeft, 30);
+        DrawText(level.ToString(),panelLeft,31);
         DrawPreview("Next Piece:", nextPiece, panelLeft, 16);
 
         if (clearingRows.Count > 0 && flashOn)

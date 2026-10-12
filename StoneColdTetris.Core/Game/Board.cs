@@ -38,14 +38,7 @@ public class Board
 
     public PieceType? GetCellPieceType(int x, int y)
     {
-        try
-        {
-            return _grid[y][x].Value;
-        }
-        catch
-        {
-            return null;
-        }
+        return _grid[y][x];
     }
     
     public bool WillCollide(List<Cell> pieceCells)

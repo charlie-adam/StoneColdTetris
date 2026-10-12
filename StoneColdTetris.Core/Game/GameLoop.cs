@@ -21,7 +21,7 @@ public class GameLoop
             isRunning = ProcessInput(game);
             game.Update(deltaTime);
             renderer.Draw(game.Board, game.ActivePiece, game.Points, game.NextPiece(),
-                game.DropPreviewPiece(), game.StoredPiece, game.ClearingRows(), game.FlashOn());
+                game.DropPreviewPiece(), game.StoredPiece, game.ClearingRows(), game.FlashOn(), game.Level);
 
             Thread.Sleep(16); // ~60 FPS cap
         }
