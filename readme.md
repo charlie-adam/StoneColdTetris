@@ -3,6 +3,5 @@ I've found myself using AI for more and more development across personal and pro
 
 still missing a proper keyboard state listener, so you can hold sideways and rotate as a piece goes sideways
 still missing settings to toggle preview etc
-still missing lock delay
 still missing wall kicks
 missing menus, pause screens, game over screens etc

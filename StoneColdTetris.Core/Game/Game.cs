@@ -5,7 +5,7 @@ public class Game
     public Board Board { get; } = new Board();
     public ActivePiece ActivePiece { get; private set; }
     public int Points { get; private set; }
-    public int LinesCleared { get; private set; }
+    private int LinesCleared { get; set; }
     public int Level => 1 + LinesCleared / 10;
     public GamePiece? StoredPiece { get; private set; }
     
@@ -14,11 +14,14 @@ public class Game
     private float _gravityTimer;
     private float GravityTick => MathF.Pow(0.8f - (Level - 1) * 0.007f, Level - 1);
     private float _flashTimer;
-    private float _flashDuration = 0.5f;
+    private readonly float _flashDuration = 0.5f;
+    private float _preLockTimer;
+    private readonly float _preLockDuration = 0.5f;
     private List<int> _clearingRows = new List<int>();
     private List<GamePiece> _activeBag = new List<GamePiece>();
     private List<GamePiece> _nextBag = new List<GamePiece>();
     private bool _hasSwapped = false;
+    private int _movesMadeSincePreLockTimerBegan = 0;
 
     public Game()
     {
@@ -43,16 +46,41 @@ public class Game
             }
             return;
         }
+        if (ActivePieceAtBottom())
+        {
+            _preLockTimer += deltaTime;
+            if (_preLockTimer > _preLockDuration)
+            {
+                EndTurn();
+                return;
+            }
+        }
+        else
+        {
+            _preLockTimer = 0;
+        }
         _gravityTimer += deltaTime;
         while (_gravityTimer > GravityTick)
         {
             _gravityTimer -= GravityTick;
             if (!MoveDown())
             {
-                // the piece locked, DONT spend the leftover time on the next piece
                 _gravityTimer = 0;
                 break;
             }
+        }
+    }
+
+    private bool ActivePieceAtBottom()
+    {
+        return Board.WillCollide(ActivePiece.Moved(0, 1).Cells());
+    }
+
+    private void IncrementMovesMadeSincePreLockBegan()
+    {
+        if (_preLockTimer > 0)
+        {
+            _movesMadeSincePreLockTimerBegan++;
         }
     }
 
@@ -64,19 +92,49 @@ public class Game
     public void MoveLeft()
     {
         if (IsClearing) return;
-        TryApply(ActivePiece.Moved(-1, 0));
+        if (TryApply(ActivePiece.Moved(-1, 0)))
+        {
+            IncrementMovesMadeSincePreLockBegan();
+            if (_movesMadeSincePreLockTimerBegan < 15) _preLockTimer = 0;
+        }
     }
 
     public void MoveRight()
     {
         if (IsClearing) return;
-        TryApply(ActivePiece.Moved(1, 0));
+        if (TryApply(ActivePiece.Moved(1, 0)))
+        {
+            IncrementMovesMadeSincePreLockBegan();
+            if (_movesMadeSincePreLockTimerBegan < 15) _preLockTimer = 0;
+        }
     }
 
     public void Rotate()
     {
         if (IsClearing) return;
-        TryApply(ActivePiece.Rotated());
+        if (TryApply(ActivePiece.Rotated()))
+        {
+            IncrementMovesMadeSincePreLockBegan();
+            if (_movesMadeSincePreLockTimerBegan < 15) _preLockTimer = 0;
+        }
+        else
+        {
+            //try right to wall push
+            if (TryApply(ActivePiece.Rotated().Moved(1, 0)))
+            {
+                IncrementMovesMadeSincePreLockBegan();
+                if (_movesMadeSincePreLockTimerBegan < 15) _preLockTimer = 0;
+            }
+            else
+            {
+                //try left to wall push
+                if (TryApply(ActivePiece.Rotated().Moved(-1, 0)))
+                {
+                    IncrementMovesMadeSincePreLockBegan();
+                    if (_movesMadeSincePreLockTimerBegan < 15) _preLockTimer = 0;
+                }
+            }
+        }
     }
 
     public void SoftDrop()
@@ -97,7 +155,7 @@ public class Game
             rowsDropped++;
         }
         Points += rowsDropped * 2;
-        EndTurn();        
+        EndTurn();
     }
 
     public List<int> ClearingRows()
@@ -109,10 +167,11 @@ public class Game
     {
         if (IsClearing) return false;
         if (TryApply(ActivePiece.Moved(0, 1)))
+        {
+            _preLockTimer = 0;
             return true;
-
-        //failed to move down further, must have collided!!
-        EndTurn();
+            
+        }
         return false;
     }
 
@@ -126,7 +185,6 @@ public class Game
             _flashTimer = 0;
             return;
         }
-
         FinishTurn();
     }
 
@@ -229,6 +287,7 @@ public class Game
     {
         GamePiece randomPiece = SelectRandomPiece();
         _hasSwapped = false;
+        _movesMadeSincePreLockTimerBegan = 0;
         return new ActivePiece(randomPiece.PieceData, GetFreshDropPosition(), randomPiece.PieceType);
     }
 
