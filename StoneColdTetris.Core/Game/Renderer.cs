@@ -2,31 +2,79 @@ namespace StoneColdTetris.Core.Game;
 
 public class Renderer
 {
+    private enum CellStyle { Empty, Filled, Ghost, Flash }
+    
     public readonly int BoardRow = 1;
     public readonly int BoardColumn = 1;
-    public Dictionary<PieceType, (ConsoleColor, ConsoleColor)> ColourMap = new Dictionary<PieceType, (ConsoleColor, ConsoleColor)>
+    public Dictionary<PieceType, ConsoleColor> ColourMap = new Dictionary<PieceType, ConsoleColor>
     {
-        { PieceType.I, (ConsoleColor.Cyan, ConsoleColor.DarkCyan) },
-        { PieceType.J, (ConsoleColor.Blue, ConsoleColor.DarkBlue) },
-        { PieceType.L, (ConsoleColor.DarkYellow, ConsoleColor.Yellow) },
-        { PieceType.O, (ConsoleColor.Yellow, ConsoleColor.DarkYellow) },
-        { PieceType.S, (ConsoleColor.Green, ConsoleColor.DarkGreen) },
-        { PieceType.T, (ConsoleColor.Magenta, ConsoleColor.DarkMagenta) },
-        { PieceType.Z, (ConsoleColor.Red, ConsoleColor.DarkRed)}
+        { PieceType.I, ConsoleColor.Cyan },
+        { PieceType.J, ConsoleColor.Blue },
+        { PieceType.L, ConsoleColor.DarkYellow },
+        { PieceType.O, ConsoleColor.Yellow },
+        { PieceType.S, ConsoleColor.Green },
+        { PieceType.T, ConsoleColor.Magenta },
+        { PieceType.Z, ConsoleColor.Red} 
         
     };
     
-    private const string EmptyCell = "::";
-    private const string FullCell = "██";
-    private const string PreviewCell = "░░";
-    private const string FlashCell = "[]";
     private const ConsoleColor DefaultColor = ConsoleColor.DarkGray;
-    const int CellWidth = 2;
+    private const int CellWidth = 4;
+    const int CellHeight = 2;
+    private const int PreviewSize = 4; // cells across and down; fits the largest piece (I)
     public void Init()
     {
         Console.CursorVisible = false;
         Console.Title = "Tetris";
         Console.Clear();
+        Console.ForegroundColor = DefaultColor;
+    }
+    
+    
+    void DrawBoardCell(int x, int y, CellStyle style, PieceType? type = null) =>
+        DrawCell((x + BoardColumn) * CellWidth, (y + BoardRow) * CellHeight, style, type);
+
+    void DrawCell(int left, int top, CellStyle style, PieceType? type = null)   // screen chars, no offsets
+    {
+        // each style picks a fill and the first 3 chars of the top row; the layout below is shared
+        ConsoleColor fill;
+        string topRow;
+        switch (style)
+        {
+            case CellStyle.Filled:
+                fill = ColourMap[type!.Value];
+                topRow = "▀  ";
+                break;
+            case CellStyle.Ghost:
+                fill = ConsoleColor.DarkGray;
+                topRow = "   ";
+                break;
+            case CellStyle.Flash:
+                fill = ConsoleColor.White;
+                topRow = "   ";
+                break;
+            case CellStyle.Empty:
+            default:
+                fill = ConsoleColor.Black;
+                topRow = "   ";
+                break;
+        }
+
+        Console.SetCursorPosition(left, top);
+        Console.BackgroundColor = fill;
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.Write(topRow);
+        Console.BackgroundColor = ConsoleColor.Black;
+        Console.Write(" ");
+
+        // fill comes from the background so it spans the full cell; the glyph only draws the black outline
+        Console.SetCursorPosition(left, top + 1);
+        Console.ForegroundColor = ConsoleColor.Black;
+        Console.BackgroundColor = fill;
+        Console.Write("▄▄▄");
+        Console.BackgroundColor = ConsoleColor.Black;
+        Console.Write(" ");
+
         Console.ForegroundColor = DefaultColor;
     }
 
@@ -36,63 +84,43 @@ public class Renderer
         {
             for (int x = 0; x < board.Width; x++)
             {
-                Console.SetCursorPosition((x+BoardColumn)*CellWidth, y+BoardRow);
-                if (board.IsCellFilled(x,y))
-                {
-                    Console.ForegroundColor = ColourMap[board.GetCellPieceType(x,y)].Item1;
-                    Console.Write(FullCell);
-                    Console.ForegroundColor = DefaultColor;
-                }
-                else
-                {
-                    Console.Write(EmptyCell);
-                }
-            }            
+                bool filled = board.IsCellFilled(x, y);
+                DrawBoardCell(x, y, filled ? CellStyle.Filled : CellStyle.Empty,
+                    filled ? board.GetCellPieceType(x, y) : null);
+            }
         }
-        
-        // draw borders
-        for (int y = 0; y < board.Height; y++)
+
+        int leftWall = BoardColumn * CellWidth - 2;
+        int rightWall = (BoardColumn + board.Width) * CellWidth;
+        int topBar = BoardRow * CellHeight - 1;
+        int bottomBar = (BoardRow + board.Height) * CellHeight;
+        string bar = new string('═', rightWall - leftWall - 1);
+
+        for (int row = topBar + 1; row < bottomBar; row++)
         {
-            Console.SetCursorPosition((BoardColumn-1)*CellWidth, y+BoardRow);
-            Console.Write(" ║");
-            Console.SetCursorPosition((BoardColumn + board.Width)*CellWidth, y+BoardRow);
-            Console.Write("║ ");
+            Console.SetCursorPosition(leftWall, row);
+            Console.Write("║");
+            Console.SetCursorPosition(rightWall, row);
+            Console.Write("║");
         }
-        for (int x = 0; x < board.Width + 2; x++)
-        {
-            Console.SetCursorPosition((BoardColumn-1 + x)*CellWidth, BoardRow-1);
-            string top = x == 0 ? " ╔" : x == board.Width+1 ? "╗ " : "══";
-            Console.Write(top);
-            Console.SetCursorPosition((BoardColumn-1 + x)*CellWidth, BoardRow+board.Height);
-            string bottom = x == 0 ? " ╚" : x == board.Width+1 ? "╝ " : "══";
-            Console.Write(bottom);
-        }
+
+        Console.SetCursorPosition(leftWall, topBar);
+        Console.Write("╔" + bar + "╗");
+        Console.SetCursorPosition(leftWall, bottomBar);
+        Console.Write("╚" + bar + "╝");
     }
-    
+
     public void Draw(Board board, ActivePiece activePiece, int points, GamePiece nextPiece, 
         ActivePiece dropPreviewPiece, GamePiece? storedPiece, List<int> clearingRows, bool flashOn)    
     {
-        //draws board
         DrawBoard(board);
-        
-        //DRAW POINTS
-        DrawText("Points:", new Cell(20,9));
-        DrawText(points.ToString(),new Cell(20,10));
-        
-        //DRAW NEXT PIECE
-        DrawText("Next Piece:", new Cell(20,14));
-        ActivePiece tempNextPiece = new ActivePiece(nextPiece.PieceData, new Cell(20, 15), nextPiece.PieceType);
-        ClearArea(20*CellWidth,15,4*CellWidth,5);
-        DrawPiece(tempNextPiece.Cells(), tempNextPiece.PieceType);
-        
-        //DRAW STORED PIECE
-        if (storedPiece != null)
-        {
-            DrawText("Stored Piece: ", new Cell(20, 1));
-            ClearArea(20*CellWidth,2,4*CellWidth,5);
-            ActivePiece tempStoredPiece = new ActivePiece(storedPiece.PieceData, new Cell(20, 2), storedPiece.PieceType);
-            DrawPiece(tempStoredPiece.Cells(), tempStoredPiece.PieceType);
-        }
+
+        // side panel, positioned in screen chars from the board's right wall
+        int panelLeft = (BoardColumn + board.Width) * CellWidth + 3;
+        DrawPreview("Stored Piece:", storedPiece, panelLeft, 1);
+        DrawText("Points:", panelLeft, 12);
+        DrawText(points.ToString(), panelLeft, 13);
+        DrawPreview("Next Piece:", nextPiece, panelLeft, 16);
 
         if (clearingRows.Count > 0 && flashOn)
         {
@@ -101,10 +129,10 @@ public class Renderer
         }
         
         //DRAW DROP PREVIEW
-        DrawPiece(dropPreviewPiece.Cells(), dropPreviewPiece.PieceType, true);
+        DrawPiece(dropPreviewPiece.Cells(), dropPreviewPiece.PieceType, CellStyle.Ghost);
         
         //DRAW ACTIVE PIECE
-        DrawPiece(activePiece.Cells(), activePiece.PieceType);
+        DrawPiece(activePiece.Cells(), activePiece.PieceType, CellStyle.Filled);
     }
 
     private void FlashRows(List<int> rowsToClear, Board board)
@@ -113,49 +141,41 @@ public class Renderer
         {
             for (int x = 0; x < board.Width; x++)
             {
-                Console.SetCursorPosition((x+BoardColumn)*CellWidth, rowsToClear[r]+BoardRow);
-                Console.ForegroundColor = ColourMap[board.GetCellPieceType(x,rowsToClear[r])].Item1;
-                Console.Write(FlashCell);
-                Console.ForegroundColor = DefaultColor;
+                DrawBoardCell(x,rowsToClear[r],CellStyle.Flash,board.GetCellPieceType(x,rowsToClear[r]));
             }            
         }
     }
 
-    private void ClearArea(int x, int y, int width, int height)
+    // padded to the panel width so shorter text overwrites longer text from earlier frames
+    private void DrawText(string text, int left, int top)
     {
-        for (int w = 0; w < width; w++)
+        Console.SetCursorPosition(left, top);
+        Console.Write(text.PadRight(PreviewSize * CellWidth));
+    }
+
+    // draws the full 4x4 box every frame, so empty cells overwrite whatever the previous piece left
+    private void DrawPreview(string label, GamePiece? piece, int left, int top)
+    {
+        DrawText(label, left, top);
+        for (int row = 0; row < PreviewSize; row++)
         {
-            for (int h = 0; h < height; h++)
+            for (int col = 0; col < PreviewSize; col++)
             {
-                Console.SetCursorPosition(x + w, y + h);
-                Console.Write(" ");
+                bool filled = piece != null
+                    && row < piece.PieceData.GetLength(0)
+                    && col < piece.PieceData.GetLength(1)
+                    && piece.PieceData[row, col] == 1;
+                DrawCell(left + col * CellWidth, top + 1 + row * CellHeight,
+                    filled ? CellStyle.Filled : CellStyle.Empty, piece?.PieceType);
             }
         }
     }
 
-    private void DrawText(string text, Cell location)
-    {
-        ClearArea(location.X*CellWidth, location.Y, text.Length, 1);
-        Console.SetCursorPosition(location.X*CellWidth,location.Y);
-        Console.Write(text);
-    }
-
-    private void DrawPiece(List<Cell> pieceCells, PieceType type, bool preview = false)
+    private void DrawPiece(List<Cell> pieceCells, PieceType type, CellStyle style)
     {
         foreach (Cell coord in pieceCells)
         {
-            Console.SetCursorPosition((coord.X + BoardColumn) * CellWidth , coord.Y+BoardRow);
-            if (preview)
-            {
-                Console.ForegroundColor = ColourMap[type].Item2;
-                Console.Write(PreviewCell);
-            }
-            else
-            {
-                Console.ForegroundColor = ColourMap[type].Item1;
-                Console.Write(FullCell);
-            }
-            Console.ForegroundColor = DefaultColor;
+            DrawBoardCell(coord.X, coord.Y, style, type);
         }
     }
 }
